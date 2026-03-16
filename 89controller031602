@@ -612,12 +612,10 @@ $("#form_entry").html(data);
 
 }  
 
-// helper to make sure we have a valid dvh record; if $id is 0 or invalid a new one is created
 private function ensure_record($id = 0) {
     $uid = $_SESSION['user_id'];
     $loc = $_SESSION['location'];
 
-    // if an id was provided and exists just return it
     if ($id) {
         $exists = $this->db->where('id', $id)->count_all_results('dvh');
         if ($exists) {
@@ -625,7 +623,6 @@ private function ensure_record($id = 0) {
         }
     }
 
-    // try to reuse an unfinalized record for this user/location
     $existing = $this->db
         ->where('prepared_by', $uid)
         ->where('fin', 0)
@@ -634,10 +631,10 @@ private function ensure_record($id = 0) {
         ->get('dvh')
         ->row('id');
     if ($existing) {
+        $this->db->where('id', $existing)->update('dvh', array('st' => 0, 'subsi' => 0, 'payee' => ''));
         return $existing;
     }
 
-    // create new row similar to original addrec logic
     $mcode = $this->db
         ->where('location', $loc)
         ->order_by('id', 'desc')
@@ -671,7 +668,6 @@ private function ensure_record($id = 0) {
 }
 
 function addrec() {
-    // return existing unfinalized record if any (prevent duplicates)
     $id = $this->ensure_record(0);
     echo json_encode(array('id' => $id));
 }
@@ -6583,18 +6579,16 @@ function edit_rec() {
 
     }
 
-    $xst = intval($dataf['st']);
-    $st = '';
-    // populate payee type dropdown from the subsi_cat lookup table
-    $st .= '<option value="0">select payee type</option>';
+    $xst = isset($dataf['st']) ? intval($dataf['st']) : 0;
+    
+    $st = '<option value="0" disabled ' . (empty($xst) ? 'selected' : '') . '>-- Select Payee Type --</option>';
+    
     $cats = $this->db->order_by('name')->get('subsi_cat')->result_array();
     foreach ($cats as $cat) {
         $cid = intval($cat['id']);
         $sel = ($xst === $cid) ? 'selected' : '';
-        // hide logic can be added here if required, e.g. if($cid==3) $hid='hidden';
         $st .= '<option value="'.$cid.'" '.$sel.'>'.$cat['name'].'</option>';
     }
-
     {
 
     $rfpl='<option value=0>select RFP</option>';
