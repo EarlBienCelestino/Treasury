@@ -1,0 +1,187 @@
+
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.min.js"></script>
+<link rel="stylesheet" href="https://cdn.datatables.net/1.10.22/css/jquery.dataTables.min.css">
+
+<link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
+
+<?php  
+$title=$this->db->where('id',176)->get('scm_settings')->row('caption');    
+
+?>
+
+<title><?=$title?></title>
+<br />
+<input type="hidden"   id="id" value=0 />
+<div class="container-fluid">
+    
+    <div id="xsearch" class="row"  >
+        <div  class="col-sm-4"  >
+            <?php
+    
+                    echo '                    
+                    <div class="input-group mb-1 input-group-sm ">
+                    <div class="input-group-prepend"> <span class="input-group-text">'.$title.'</span></div> 
+                    </div>                    
+                                       
+                    <div class="input-group mb-1 input-group-sm ">
+                    
+                    <input type="text" class="form-control " id="qs" placeholder="Quick Search" onchange="qs()" />
+                    </div>                   
+                                       
+                    <div class="input-group mb-1 input-group-sm ">
+                    <div class="input-group-prepend"> <span class="input-group-text">Start</span></div>
+                    <input type="date" class="form-control " id="ds" value="'.date('Y-m-d').'" /></div>                   
+                                       
+                    <div class="input-group mb-1 input-group-sm ">
+                    <div class="input-group-prepend"> <span class="input-group-text">End</span></div>
+                    <input type="date" class="form-control " id="de" value="'.date('Y-m-d').'" /></div>    
+                    
+                    '; 
+            ?>                     
+                    <div class="input-group mb-1 input-group-sm ">
+                        <input type="button" class="form-control " value ="View" onclick="View()"  />
+                        <input type="button" class="form-control " value ="Add" onclick="add()"  />
+                        <input type="button" class="form-control " value ="Clear" onclick="exits()"  />
+                    </div>
+        
+    </div>
+    
+    <div id="list" class="col-sm-8" ></div>
+    </div> 
+    
+    <div id="forms"></div>    
+    
+    <div id="form_entry" ></div>
+</div>
+
+<script> 
+    
+    
+function add() { 
+        
+    if(confirm("Add New JOS?")==true) { 
+        $.ajax({url:"<?=base_url('176/dashboard/add')?>",
+        dataType:"json",
+        method:"POST",
+        data:{ },
+        success:function(data){
+            
+            var id=data.id;
+                $.ajax({url:"<?=base_url('176/dashboard/edit/')?>" + id
+                ,method:"POST"
+                ,data:{ }
+                ,success:function(data) {  
+                    $("#xsearch").hide(); 
+                    $("#form_entry").empty();  
+                    $("#form_entry").html(data);   
+                } 
+                });    
+        
+                }
+        });             
+    } 
+}  
+
+function  View() {
+    list() ;
+}
+    
+function  qs() {
+    $.ajax({url:"<?=base_url('176/dashboard/list2')?>",method:"POST",data:{
+        qs:$("#qs").val()  
+        
+    },success:function(data) {  
+         $("#form_entry").empty(); 
+        $("#list").html(data); 
+        $("#xsearch").show();   
+         } 
+        }); 
+} 
+    
+function  list() {
+    $.ajax({url:"<?=base_url('176/dashboard/list')?>",method:"POST",data:{
+        qs:$("#qs").val() 
+        ,ds:$("#ds").val() 
+        ,de:$("#de").val() 
+        
+    },success:function(data) {  
+         $("#form_entry").empty(); 
+        $("#list").html(data); 
+        $("#xsearch").show();   
+         } 
+        }); 
+} 
+
+list();  
+    
+$(document).ready(function(){
+
+
+$("#User_rights").select2({ajax: {   
+url: "<?=base_url('176/dashboard/User_rights')?>",
+type: "post", dataType: "json",  delay: 250,  data: function (params) { return { searchTerm: params.term  };  },processResults: function (response) {  return { results: response  };  },  cache: true   }}); 
+
+
+$("#dept").select2({ajax: {   
+url: "<?=base_url('176/dashboard/dept')?>",
+type: "post", dataType: "json",  delay: 250,  data: function (params) { return { searchTerm: params.term  };  },processResults: function (response) {  return { results: response  };  },  cache: true   }}); 
+
+$("#Branch").select2({ajax: {   
+url: "<?=base_url('176/dashboard/Branch')?>",
+type: "post", dataType: "json",  delay: 250,  data: function (params) { return { searchTerm: params.term  };  },processResults: function (response) {  return { results: response  };  },  cache: true   }}); 
+
+var userid=$("#userid").val();
+    
+$("#userid").select2({ajax: {   
+url: "<?=base_url('176/dashboard/userid')?>",
+type: "post", dataType: "json",  delay: 250,  data: function (params) { return { searchTerm: params.term,userid:userid  };  },processResults: function (response) {  return { results: response  };  },  cache: true   }}); 
+    
+    
+$("#upload_form").on("submit", function(e){
+e.preventDefault();
+if($("#image_file").val() == "") { alert("Please Select the File"); }
+else
+{ $.ajax({
+url:"<?=base_url('176/dashboard/ajax_upload')?>", 
+method:"POST",
+dataType:"json",
+data:new FormData(this),
+contentType: false,
+cache: false,
+processData:false,
+success:function(data)
+{ $("#uploaded_image").html(data.img); $("#DSR_Photo").val(data.fnm); }
+});
+}
+});
+    
+$('#trn_list').DataTable();
+$("#entry").hide();  
+    
+$("#search").on("keyup", function() { list(); });
+
+});
+    
+function  exits() { list(); }  
+    
+function save() {
+    var datas=[ $("#id").val(),$("#code").val(),$("#name").val()];
+    var name=$("#name").val(); 
+        
+    if(confirm("save record now?")==true) { 
+        $.ajax({url:"<?=base_url('176/dashboard/save')?>",
+        dataType:"json",
+        method:"POST",
+        data:{datas:datas},
+        success:function(data){
+                    alert("record saved..."); 
+                    exits(); 
+                }
+        });             
+    } 
+}  
+
+</script>         
+
